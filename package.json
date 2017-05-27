@@ -2,6 +2,9 @@
   "name": "ncm-releases",
   "version": "0.1.0",
   "description": "View avaliable releases for electron-netease-cloud-music",
+  "engines": {
+    "node": ">=7.6.0"
+  },
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
