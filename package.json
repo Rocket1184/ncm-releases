@@ -1,0 +1,33 @@
+{
+  "name": "ncm-releases",
+  "version": "0.1.0",
+  "description": "View avaliable releases for electron-netease-cloud-music",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Rocket1184/ncm-releases.git"
+  },
+  "keywords": [
+    "electron-netease-cloud-music",
+    "electron-ncm",
+    "elncm"
+  ],
+  "author": "rocka <i@rocka.me>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Rocket1184/ncm-releases/issues"
+  },
+  "homepage": "https://github.com/Rocket1184/ncm-releases#readme",
+  "dependencies": {
+    "koa": "^2.2.0",
+    "koa-route": "^3.2.0",
+    "pug": "^2.0.0-rc.1",
+    "qiniu": "^6.1.13"
+  },
+  "devDependencies": {
+    "@types/koa": "^2.0.39"
+  }
+}

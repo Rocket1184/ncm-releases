@@ -1,0 +1,39 @@
+doctype html
+html(lang=en)
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    meta(http-equiv='X-UA-Compatible', content='ie=edge')
+    title ElectronNCM Downloads
+
+  body
+    section
+      h2 Branch: master
+      table
+        thead
+          tr
+            th link
+            th size
+            th time
+        tbody
+          each item in master
+            tr
+              td
+                a(href=item.url) #{item.name}
+              td #{item.size}
+              td #{item.time}
+    section
+      h2 Branch: dev
+      table
+        thead
+          tr
+            th link
+            th size
+            th time
+        tbody
+          each item in dev
+            tr
+              td
+                a(href=item.url) #{item.name}
+              td #{item.size}
+              td #{item.time}
