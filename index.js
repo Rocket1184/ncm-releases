@@ -34,9 +34,9 @@ function getFiles(suffix = '') {
     return new Promise((res, rej) => {
         qiniu.rsf.listPrefix(`electron-netease-cloud-music${suffix}`, '', '', 100, '', (err, ret) => {
             if (!err) {
-                console.log(ret);
+                ret.items.sort((a, b) => b.putTime - a.putTime);
                 const list = ret.items.map(i => ({
-                    name: i.key.replace(/electron-ncm-([^\.]+)/, '$1'),
+                    name: i.key.replace('electron-ncm-', ''),
                     size: formatSize(i.fsize),
                     time: formatDate(i.putTime),
                     url: `http://ncm${suffix}.rocka.cn/${i.key}`
@@ -51,7 +51,7 @@ function getFiles(suffix = '') {
 
 async function renderIndex(ctx, next) {
     const { 0: master, 1: dev } = await Promise.all([getFiles(), getFiles('-dev')]);
-    ctx.body = compiledFunction({ master, dev });
+    ctx.body = compiledFunction({ data: { master, dev } });
 }
 
 const app = new koa();
