@@ -8,7 +8,7 @@ const qiniu = require('qiniu');
 qiniu.conf.ACCESS_KEY = process.env.QINIU_ACCESS_KEY;
 qiniu.conf.SECRET_KEY = process.env.QINIU_SECRET_KEY;
 
-const compiledFunction = pug.compileFile('./static/index.pug');
+const renderIndex = pug.compileFile('./static/index.pug');
 
 function formatSize(val) {
     let i;
@@ -49,13 +49,21 @@ function getFiles(suffix = '') {
     })
 }
 
-async function renderIndex(ctx, next) {
-    const { 0: master, 1: dev } = await Promise.all([getFiles(), getFiles('-dev')]);
-    ctx.body = compiledFunction({ data: { master, dev } });
+let binaryData = {};
+async function refreshBinaryData() {
+    const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
+    binaryData = { data: { master, dev } };
+};
+
+refreshBinaryData();
+setInterval(refreshBinaryData, 60 * 1000);
+
+async function indexHandler(ctx, next) {
+    ctx.body = renderIndex(binaryData);
 }
 
 const app = new koa();
 
-app.use(route.get('/', renderIndex));
+app.use(route.get('/', indexHandler));
 
 app.listen(process.env.PORT || 11233);
