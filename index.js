@@ -11,13 +11,11 @@ qiniu.conf.SECRET_KEY = process.env.QINIU_SECRET_KEY;
 const renderIndex = pug.compileFile('./static/index.pug');
 
 function formatSize(val) {
-    let i;
-    const unit = ['', 'K', 'M', 'G', 'T'];
-    for (i = 0; i < unit.length; i++) {
-        if (val < 1000) break;
-        else val /= 1024;
+    for (const unit of ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']) {
+        if (val < 1000) return `${val.toFixed(1)} ${unit}B`;
+        val /= 1024;
     }
-    return `${val.toFixed(1)} ${unit[i]}B`;
+    return `${val.toFixed(1)} YB`;
 }
 
 function formatDate(timespan) {
