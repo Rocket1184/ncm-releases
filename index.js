@@ -49,12 +49,16 @@ function getFiles(suffix = '') {
 
 let binaryData = {};
 async function refreshBinaryData() {
-    const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
-    binaryData = { data: { master, dev } };
+    try {
+        const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
+        binaryData = { data: { master, dev } };
+    } catch (err) {
+        return refreshBinaryData();
+    }
 };
 
 refreshBinaryData();
-setInterval(refreshBinaryData, 60 * 1000);
+setInterval(refreshBinaryData, 8 * 1000);
 
 async function indexHandler(ctx, next) {
     ctx.body = renderIndex(binaryData);
