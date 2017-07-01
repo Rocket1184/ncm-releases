@@ -47,7 +47,19 @@ function getFiles(suffix = '') {
     })
 }
 
-let binaryData = {};
+let binaryData = {
+    data: {
+        Info: [
+            {
+                name: 'Please refresh page and try again...',
+                size: '∑(￣□￣;)',
+                time: formatDate(Date.now()),
+                url: 'javascript:window.location.reload()'
+            }
+        ]
+    }
+};
+
 async function refreshBinaryData() {
     try {
         const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
