@@ -1,0 +1,33 @@
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+section {
+    border-radius: 2px;
+    border: 1px solid grey;
+    overflow: hidden;
+    box-shadow: 0 0 8px lightgrey;
+}
+
+section .title {
+    font-family: monospace;
+    background-color: rgba(240, 120, 255, 0.2);
+    padding: 8px;
+    border-bottom: 1px solid grey;
+}
+
+section .title a {
+    float: right;
+    padding-left: 1em;
+}
+
+section .detail ul {
+    margin: 0;
+    padding: 0;
+}
+
+section .detail {
+    font-family: monospace;
+    margin: 8px;
+}

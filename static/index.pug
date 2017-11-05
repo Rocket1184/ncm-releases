@@ -4,22 +4,19 @@ html(lang=en)
     meta(charset='UTF-8')
     meta(name='viewport', content='width=device-width, initial-scale=1.0')
     meta(http-equiv='X-UA-Compatible', content='ie=edge')
+    link(rel="stylesheet", href="/style.css")
     title ElectronNCM Downloads
 
   body
-    each binary, name in data
-      section
-        h2 Branch: #{name}
-        table
-          thead
-            tr
-              th link
-              th size
-              th time
-          tbody
-            each item in binary
-              tr
-                td
-                  a(href=item.url) #{item.name}
-                td #{item.size}
-                td #{item.time}
+    div(class='container')
+      each item in data
+        section
+          div(class='build-item' data-hash=item.hash data-timestamp=item.timestamp)
+            div(class='title')
+              span #{item.hash}
+              each bin, os in item.pkgs
+                a(href=bin.url) #{os}
+            div(class='detail')
+              ul
+                each commit in item.commits
+                  li #{commit.commit.message}
