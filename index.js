@@ -5,8 +5,11 @@ const koa = require('koa');
 const route = require('koa-route');
 const qiniu = require('qiniu');
 
-qiniu.conf.ACCESS_KEY = process.env.QINIU_ACCESS_KEY;
-qiniu.conf.SECRET_KEY = process.env.QINIU_SECRET_KEY;
+const mac = new qiniu.auth.digest.Mac(process.env.QINIU_ACCESS_KEY, process.env.QINIU_SECRET_KEY);
+const config = new qiniu.conf.Config();
+config.useHttpsDomain = true;
+config.zone = qiniu.zone.Zone_z0;
+const bucketManager = new qiniu.rs.BucketManager(mac, config);
 
 const renderIndex = pug.compileFile('./static/index.pug');
 
@@ -29,11 +32,15 @@ function formatDate(timespan) {
 }
 
 function getFiles(suffix = '') {
+    const options = {
+        limit: 20,
+        prefix: '',
+    };
     return new Promise((res, rej) => {
-        qiniu.rsf.listPrefix(`electron-netease-cloud-music${suffix}`, '', '', 100, '', (err, ret) => {
-            if (!err) {
-                ret.items.sort((a, b) => b.putTime - a.putTime);
-                const list = ret.items.map(i => ({
+        bucketManager.listPrefix(`electron-netease-cloud-music${suffix}`, options, (err, respBody, respInfo) => {
+            if (!err && respInfo.statusCode === 200) {
+                respBody.items.sort((a, b) => b.putTime - a.putTime);
+                const list = respBody.items.map(i => ({
                     name: i.key.replace('electron-ncm-', ''),
                     size: formatSize(i.fsize),
                     time: formatDate(i.putTime),
@@ -44,7 +51,7 @@ function getFiles(suffix = '') {
                 rej(err);
             }
         });
-    })
+    });
 }
 
 let binaryData = {
@@ -62,9 +69,12 @@ let binaryData = {
 
 async function refreshBinaryData() {
     try {
-        const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
-        binaryData = { data: { master, dev } };
+        // const [master, dev] = await Promise.all([getFiles(), getFiles('-dev')]);
+        // binaryData = { data: { master, dev } };
+        const [master] = await Promise.all([getFiles()]);
+        binaryData = { data: { master } };
     } catch (err) {
+        console.log(`Error when refreshBinaryData: ${JSON.stringify(err, null, 4)}`);
         return refreshBinaryData();
     }
 };
@@ -80,4 +90,7 @@ const app = new koa();
 
 app.use(route.get('/', indexHandler));
 
-app.listen(process.env.PORT || 11233);
+const port = process.env.PORT || 11233;
+app.listen(port, () => {
+    console.log(`Server listening at http://localhost:${port}`);
+});
