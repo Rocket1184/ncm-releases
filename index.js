@@ -36,7 +36,7 @@ function formatDate(timestamp) {
 }
 
 function getCommits(since, until = new Date().toISOString()) {
-    let url = `https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits`;
+    let url = 'https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits';
     let query = {};
     if (since) query.since = since;
     if (until) query.until = until;
@@ -61,7 +61,7 @@ function getFiles() {
         prefix: '',
     };
     return new Promise((res, rej) => {
-        bucketManager.listPrefix(`electron-netease-cloud-music`, options, (err, respBody, respInfo) => {
+        bucketManager.listPrefix('electron-netease-cloud-music', options, (err, respBody, respInfo) => {
             if (!err && respInfo.statusCode === 200) {
                 respBody.items.sort((a, b) => b.putTime - a.putTime);
                 const result = [];
@@ -98,18 +98,18 @@ function getFiles() {
 let avaliableBuilds = {
     data: [
         {
-            hash: 'unknown_hash',
+            hash: 'Load failed',
             timestamp: new Date().toISOString(),
             commits: [
                 {
                     sha: 'xxxxxxx',
                     commit: {
-                        message: 'what\'s this?'
+                        message: 'Please refresh page and try again ...'
                     }
                 }
             ],
             pkgs: {
-                'Unknown OS': {
+                'Refresh': {
                     name: 'not_avaliable',
                     hash: 'unknown_hash',
                     size: -1,

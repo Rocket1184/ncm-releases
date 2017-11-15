@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/Rocket1184/ncm-releases#readme",
   "dependencies": {
-    "koa": "^2.3.0",
+    "koa": "^2.4.1",
     "koa-route": "^3.2.0",
     "koa-static": "^4.0.1",
     "node-fetch": "^1.7.3",
@@ -34,6 +34,6 @@
     "qiniu": "^7.1.1"
   },
   "devDependencies": {
-    "@types/koa": "^2.0.39"
+    "@types/koa": "^2.0.40"
   }
 }
