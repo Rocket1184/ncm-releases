@@ -1,20 +1,37 @@
+body,
+html,
+p,
+section,
+ul,
+li {
+    margin: 0;
+    padding: 0;
+}
+
 .container {
     max-width: 800px;
     margin: 0 auto;
 }
 
 section {
-    border-radius: 2px;
+    margin: 1em 0;
+    border-radius: 3px;
     border: 1px solid grey;
     overflow: hidden;
     box-shadow: 0 0 8px lightgrey;
+    font-family: monospace;
 }
 
 section .title {
     font-family: monospace;
-    background-color: rgba(240, 120, 255, 0.2);
+    background-color: rgba(0, 150, 136, 0.2);
     padding: 8px;
     border-bottom: 1px solid grey;
+}
+
+section .sub-title {
+    font-weight: bold;
+    padding: 2px 8px;
 }
 
 section .title a {
@@ -22,12 +39,14 @@ section .title a {
     padding-left: 1em;
 }
 
-section .detail ul {
-    margin: 0;
-    padding: 0;
+section .detail ul li {
+    padding: 2px 8px;
+    list-style: none;
+    white-space: pre;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    transition: background-color 0.5s;
 }
 
-section .detail {
-    font-family: monospace;
-    margin: 8px;
+section .detail ul li:hover {
+    background-color: rgba(0,0,0,0.1);
 }

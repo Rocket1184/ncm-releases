@@ -16,6 +16,7 @@ html(lang=en)
               span #{item.hash}
               each bin, os in item.pkgs
                 a(href=bin.url) #{os}
+            p(class='sub-title') Changes to be included in this bulid:
             div(class='detail')
               ul
                 each commit in item.commits
