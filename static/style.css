@@ -6,6 +6,7 @@ ul,
 li {
     margin: 0;
     padding: 0;
+    font-size: 14px;
 }
 
 .container {
@@ -31,7 +32,7 @@ section .title {
 
 section .sub-title {
     font-weight: bold;
-    padding: 2px 8px;
+    padding: 6px 8px;
 }
 
 section .title a {
@@ -42,11 +43,18 @@ section .title a {
 section .detail ul li {
     padding: 2px 8px;
     list-style: none;
-    white-space: pre;
+    white-space: pre-wrap;
     border-top: 1px solid rgba(0,0,0,0.1);
     transition: background-color 0.5s;
 }
 
 section .detail ul li:hover {
-    background-color: rgba(0,0,0,0.1);
+    background-color: rgba(0,0,0,0.1); 
+}
+
+@media screen and (max-width: 814px) {
+    section {
+        margin-left: 14px;
+        margin-right: 14px;
+    }
 }
