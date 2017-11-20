@@ -26,13 +26,14 @@ function formatSize(val) {
 }
 
 function formatDate(timestamp) {
-    const to2Digit = num => num < 10 ? `0${num}` : num;
     const dt = new Date(timestamp / 10000);
-    const M = parseInt(dt.getMonth()) + 1;
-    const D = dt.getDate();
-    const h = dt.getHours();
-    const m = dt.getMinutes();
-    return `${to2Digit(M)}-${to2Digit(D)} ${to2Digit(h)}:${to2Digit(m)}`;
+    return dt.toLocaleDateString('en', {
+        hour12: false,
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
 }
 
 function getCommits(since, until = new Date().toISOString()) {
@@ -124,7 +125,13 @@ let avaliableBuilds = {
 async function refreshAvaliableBuilds() {
     try {
         const files = await getFiles();
+        console.log('getFiles:', files);
+        // due to GitHub API [rate-limiting](https://developer.github.com/v3/#rate-limiting)
+        // we can only request 60 times per hour.
+        // so do not refresh change log when avaliable builds have no changes
+        if (files.length === avaliableBuilds.data.length) return;
         await addChangeLog(files);
+        console.log('addChangeLog:', files);
         avaliableBuilds = { data: files };
     } catch (err) {
         console.log('Error when refreshBinaryData:', err);
