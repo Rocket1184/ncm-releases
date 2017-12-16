@@ -68,7 +68,7 @@ function getFiles() {
                 const result = [];
                 respBody.items.forEach(item => {
                     const hashReg = /-([a-z0-9]{7}).tar.gz/g;
-                    const typeReg = /([a-z0-9]+\-[a-z0-9]+)/g;
+                    const typeReg = /([a-z0-9]+-[a-z0-9]+)/g;
                     const parsed = {
                         name: item.key.replace('electron-ncm-', ''),
                         hash: hashReg.exec(item.key)[1] || 'unknown_hash',
@@ -137,12 +137,12 @@ async function refreshAvaliableBuilds() {
         console.log('Error when refreshBinaryData:', err);
         return refreshAvaliableBuilds();
     }
-};
+}
 
 refreshAvaliableBuilds();
 setInterval(refreshAvaliableBuilds, 8 * 1000);
 
-async function indexHandler(ctx, next) {
+async function indexHandler(ctx) {
     ctx.body = renderIndex(avaliableBuilds);
 }
 
