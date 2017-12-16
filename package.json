@@ -28,12 +28,10 @@
   "dependencies": {
     "koa": "^2.4.1",
     "koa-route": "^3.2.0",
-    "koa-static": "^4.0.1",
+    "koa-static": "^4.0.2",
     "node-fetch": "^1.7.3",
     "pug": "^2.0.0-rc.4",
     "qiniu": "^7.1.1"
   },
-  "devDependencies": {
-    "@types/koa": "^2.0.40"
-  }
+  "devDependencies": {}
 }
