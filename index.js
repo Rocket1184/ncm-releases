@@ -74,7 +74,7 @@ function getFiles() {
                         hash: hashReg.exec(item.key)[1] || 'unknown_hash',
                         size: formatSize(item.fsize),
                         time: formatDate(item.putTime),
-                        url: `http://ncm.rocka.cn/${item.key}`
+                        url: `http://ncm.qn.rocka.cn/${item.key}`
                     };
                     const type = typeReg.exec(parsed.name)[1] || 'Unknown OS';
                     const lastResult = result[result.length - 1] || {};
