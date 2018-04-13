@@ -47,18 +47,23 @@ function getCommits(since, until = new Date().toISOString()) {
 
 async function addChangeLog(files) {
     await Promise.all(files.map(async (value, index) => {
-        let previous = files[index + 1];
-        if (previous) {
+        if (index + 1 < files.length) {
+            // it's not the oldest build
             value.commits = await getCommits(files[index + 1].timestamp, value.timestamp);
         } else {
+            // it's the oldest build
             value.commits = await getCommits('', value.timestamp);
+            if (value.commits.length > 9) {
+                value.commits = value.commits.slice(0, 9);
+                value.commits.push({ commit: { message: 'and more ...' } });
+            }
         }
     }));
 }
 
 function getFiles() {
     const options = {
-        limit: 20,
+        limit: 1024,
         prefix: '',
     };
     return new Promise((res, rej) => {
@@ -138,13 +143,18 @@ async function refreshAvaliableBuilds() {
         console.log('addChangeLog:', files);
         avaliableBuilds = { data: files };
     } catch (err) {
-        console.log('Error when refreshBinaryData:', err);
+        console.log('Error when refreshAvaliableBuilds:', err);
         return refreshAvaliableBuilds();
     }
 }
 
-refreshAvaliableBuilds();
-setInterval(refreshAvaliableBuilds, 8 * 1000);
+(async function entryPoint() {
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+        await refreshAvaliableBuilds();
+        await new Promise(_ => setTimeout(() => _(), 8 * 1000));
+    }
+})();
 
 async function indexHandler(ctx) {
     ctx.body = renderIndex(avaliableBuilds);
