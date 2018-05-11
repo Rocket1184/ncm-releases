@@ -134,16 +134,17 @@ function countPkg(input) {
 async function refreshAvaliableBuilds() {
     try {
         const files = await getFiles();
-        console.log('getFiles:', files);
+        const cnt = countPkg(files);
         // due to GitHub API [rate-limiting](https://developer.github.com/v3/#rate-limiting)
         // we can only request 60 times per hour.
         // so do not refresh change log when avaliable builds have no changes
-        if (countPkg(files) === countPkg(avaliableBuilds.data)) return;
+        if (cnt === countPkg(avaliableBuilds.data)) return;
+        console.log(`countPkg(getFiles()); // ${cnt}`);
         await addChangeLog(files);
-        console.log('addChangeLog:', files);
+        console.log('addChangeLog();');
         avaliableBuilds = { data: files };
-    } catch (err) {
-        console.log('Error when refreshAvaliableBuilds:', err);
+    } catch (e) {
+        console.error(`refreshAvaliableBuilds(); // ${e}`);
         return refreshAvaliableBuilds();
     }
 }
