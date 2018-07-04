@@ -26,12 +26,13 @@
   },
   "homepage": "https://github.com/Rocket1184/ncm-releases#readme",
   "dependencies": {
+    "axios": "^0.18.0",
     "koa": "^2.5.1",
     "koa-route": "^3.2.0",
-    "koa-static": "^4.0.2",
-    "node-fetch": "^2.1.2",
+    "koa-static": "^5.0.0",
+    "lodash.groupby": "^4.6.0",
     "pug": "^2.0.3",
-    "qiniu": "^7.1.5"
+    "qiniu": "^7.2.1"
   },
   "devDependencies": {}
 }

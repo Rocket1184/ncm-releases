@@ -7,7 +7,11 @@ const koa = require('koa');
 const route = require('koa-route');
 const serve = require('koa-static');
 const qiniu = require('qiniu');
-const fetch = require('node-fetch');
+const axios = require('axios');
+
+const _ = {
+    groupBy: require('lodash.groupby')
+};
 
 const mac = new qiniu.auth.digest.Mac(process.env.QINIU_ACCESS_KEY, process.env.QINIU_SECRET_KEY);
 const config = new qiniu.conf.Config();
@@ -18,17 +22,18 @@ const bucketManager = new qiniu.rs.BucketManager(mac, config);
 const renderIndex = pug.compileFile('./static/index.pug');
 
 function formatSize(val) {
-    for (const unit of ['', 'K', 'M', 'G', 'T', 'P', 'E', 'Z']) {
+    for (const unit of ['', 'K', 'M']) {
         if (val < 1000) return `${val.toFixed(1)} ${unit}B`;
         val /= 1024;
     }
-    return `${val.toFixed(1)} YB`;
+    return `${val.toFixed(1)} GB`;
 }
 
 function formatDate(timestamp) {
     const dt = new Date(timestamp / 10000);
-    return dt.toLocaleDateString('en', {
+    return dt.toLocaleDateString('zh', {
         hour12: false,
+        year: 'numeric',
         month: '2-digit',
         day: '2-digit',
         hour: '2-digit',
@@ -37,22 +42,23 @@ function formatDate(timestamp) {
 }
 
 function getCommits(since, until = new Date().toISOString()) {
-    let url = 'https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits';
-    let query = {};
-    if (since) query.since = since;
-    if (until) query.until = until;
-    url += `?${qs.stringify(query)}`;
-    return fetch(url).then(r => r.json());
+    return axios({
+        url: `https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits?${qs.stringify({ since, until })}`,
+        headers: {
+            Accept: 'application/vnd.github.v3+json',
+            Authorization: `token ${process.env.GITHUB_TOKEN}`
+        }
+    }).then(response => response.data);
 }
 
-async function addChangeLog(files) {
-    await Promise.all(files.map(async (value, index) => {
-        if (index + 1 < files.length) {
+async function addChangeLog(releases) {
+    await Promise.all(releases.map(async (value, index) => {
+        if (index + 1 < releases.length) {
             // it's not the oldest build
-            value.commits = await getCommits(files[index + 1].timestamp, value.timestamp);
+            value.commits = await getCommits(releases[index + 1].timestamp, value.timestamp);
         } else {
             // it's the oldest build
-            value.commits = await getCommits('', value.timestamp);
+            value.commits = await getCommits(new Date(0).toISOString(), value.timestamp);
             if (value.commits.length > 9) {
                 value.commits = value.commits.slice(0, 9);
                 value.commits.push({ commit: { message: 'and more ...' } });
@@ -61,44 +67,64 @@ async function addChangeLog(files) {
     }));
 }
 
-function getFiles() {
+function listPrefix(prefix = 'electron-netease-cloud-music') {
     const options = {
         limit: 1024,
         prefix: '',
     };
-    return new Promise((res, rej) => {
-        bucketManager.listPrefix('electron-netease-cloud-music', options, (err, respBody, respInfo) => {
+    return new Promise((resolve, reject) => {
+        bucketManager.listPrefix(prefix, options, (err, respBody, respInfo) => {
             if (!err && respInfo.statusCode === 200) {
-                respBody.items.sort((a, b) => b.putTime - a.putTime);
-                const result = [];
-                respBody.items.forEach(item => {
-                    const hashReg = /-([a-z0-9]{7}).tar.gz/g;
-                    const typeReg = /([a-z0-9]+-[a-z0-9]+)/g;
-                    const parsed = {
-                        name: item.key.replace('electron-ncm-', ''),
-                        hash: hashReg.exec(item.key)[1] || 'unknown_hash',
-                        size: formatSize(item.fsize),
-                        time: formatDate(item.putTime),
-                        url: `http://ncm.qn.rocka.cn/${item.key}`
-                    };
-                    const type = typeReg.exec(parsed.name)[1] || 'Unknown OS';
-                    const lastResult = result[result.length - 1] || {};
-                    if (lastResult.hash && lastResult.hash === parsed.hash) {
-                        lastResult.pkgs[type] = parsed;
-                    } else {
-                        result.push({
-                            hash: parsed.hash,
-                            timestamp: new Date(item.putTime / 10000).toISOString(),
-                            pkgs: { [type]: parsed }
-                        });
-                    }
-                });
-                res(result);
+                resolve(respBody.items);
             } else {
-                rej(err);
+                reject(err);
             }
         });
     });
+}
+
+function groupReleasesByCommit(items) {
+    return _.groupBy(items, item => {
+        const regxp = /[-_]([a-z0-9]{7})\./;
+        const hash = regxp.exec(item.key);
+        return hash[1] || 'unknown';
+    });
+}
+
+function groupPackageByPlatform(pkgs) {
+    const result = {};
+    for (const pkg of pkgs) {
+        const parsed = {
+            size: formatSize(pkg.fsize),
+            time: formatDate(pkg.putTime),
+            url: `http://ncm.qn.rocka.cn/${pkg.key}`
+        };
+        if (pkg.key.endsWith('.asar')) {
+            result['asar'] = parsed;
+        } else if (pkg.key.endsWith('.tar.gz')) {
+            if (pkg.key.includes('linux-x64')) {
+                result['linux-x64'] = parsed;
+            } else if (pkg.key.includes('darwin-x64')) {
+                result['darwin-x64'] = parsed;
+            }
+        }
+    }
+    return result;
+}
+
+async function getFiles() {
+    const result = [];
+    const versions = groupReleasesByCommit(await listPrefix());
+    for (const hash in versions) {
+        result.push({
+            hash,
+            timestamp: versions[hash][0].putTime,
+            pkgs: groupPackageByPlatform(versions[hash])
+        });
+    }
+    result.sort((a, b) => b.timestamp - a.timestamp);
+    result.forEach(r => r.timestamp = new Date(r.timestamp / 10000).toISOString());
+    return result;
 }
 
 let avaliableBuilds = {
