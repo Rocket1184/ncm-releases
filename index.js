@@ -7,7 +7,7 @@ const koa = require('koa');
 const route = require('koa-route');
 const serve = require('koa-static');
 const qiniu = require('qiniu');
-const axios = require('axios');
+const fetch = require('node-fetch');
 
 const _ = {
     groupBy: require('lodash.groupby')
@@ -42,13 +42,12 @@ function formatDate(timestamp) {
 }
 
 function getCommits(since, until = new Date().toISOString()) {
-    return axios({
-        url: `https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits?${qs.stringify({ since, until })}`,
+    return fetch(`https://api.github.com/repos/Rocket1184/electron-netease-cloud-music/commits?${qs.stringify({ since, until })}`, {
         headers: {
             Accept: 'application/vnd.github.v3+json',
             Authorization: `token ${process.env.GITHUB_TOKEN}`
         }
-    }).then(response => response.data);
+    }).then(response => response.json());
 }
 
 async function addChangeLog(releases) {
