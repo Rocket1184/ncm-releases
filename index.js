@@ -162,9 +162,6 @@ async function refreshAvaliableBuilds() {
 const app = new koa();
 
 app.use(route.get('/', ctx => {
-    if (process.env.NODE_ENV !== 'development' && ctx.protocol === 'http') {
-        return ctx.redirect(ctx.url.replace(/^http/, 'https'));
-    }
     ctx.body = pug.renderFile('./static/index.pug', avaliableBuilds)
 }));
 
