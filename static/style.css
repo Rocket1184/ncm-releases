@@ -28,6 +28,8 @@ section .title {
     background-color: rgba(0, 150, 136, 0.2);
     padding: 8px;
     border-bottom: 1px solid grey;
+    display: flex;
+    justify-content: space-between;
 }
 
 section .sub-title {
@@ -36,20 +38,19 @@ section .sub-title {
 }
 
 section .title a {
-    float: right;
-    padding-left: 1em;
+    margin-left: 1em;
 }
 
 section .detail ul li {
     padding: 2px 8px;
     list-style: none;
     white-space: pre-wrap;
-    border-top: 1px solid rgba(0,0,0,0.1);
-    transition: background-color 0.5s;
+    border-top: 1px solid #e5e5e5;
+    transition: background-color 0.2s;
 }
 
 section .detail ul li:hover {
-    background-color: rgba(0,0,0,0.1); 
+    background-color: #e5e5e5; 
 }
 
 @media screen and (max-width: 814px) {
