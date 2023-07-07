@@ -1,16 +1,14 @@
 // @ts-check
 'use strict';
 
-const pug = require('pug');
-const koa = require('koa');
-const route = require('koa-route');
-const serve = require('koa-static');
-const _ = {
-    groupBy: require('lodash/groupBy')
-};
+import pug from 'pug';
+import koa from 'koa';
+import route from 'koa-route';
+import serve from 'koa-static';
+import groupBy from 'lodash.groupby'
 
-const { getCommits } = require('./lib/github');
-const { listBucketFiles } = require('./lib/qiniu');
+import { getCommits } from './lib/github.js';
+import { listBucketFiles } from './lib/qiniu.js';
 
 /**
  * @param {number} val
@@ -47,7 +45,7 @@ async function addChangeLog(releases) {
  * @returns {{[key: string]: Qn.File[]}}
  */
 function groupFilesByVersion(items) {
-    return _.groupBy(items, item => {
+    return groupBy(items, item => {
         const regxp = /_(v\w+\.\w+\.\w+-\d+-g[0-9a-f]+)/;
         const version = regxp.exec(item.key)[1];
         return version || 'unknown';
@@ -146,8 +144,8 @@ async function refreshAvaliableBuilds() {
         console.log('addChangeLog();');
         avaliableBuilds = { data: releases };
     } catch (e) {
-        console.error(`refreshAvaliableBuilds(); // ${e}`);
-        return refreshAvaliableBuilds();
+        console.error('refreshAvaliableBuilds() failed:');
+        console.error(e);
     }
 }
 
