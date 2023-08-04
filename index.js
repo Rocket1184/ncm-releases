@@ -1,76 +1,96 @@
-// @ts-check
-'use strict';
-
 import pug from 'pug';
 import koa from 'koa';
 import route from 'koa-route';
 import serve from 'koa-static';
-import groupBy from 'lodash.groupby'
+import groupBy from 'lodash/groupBy.js'
+import semver from 'semver';
 
-import { getCommits } from './lib/github.js';
-import { listBucketFiles } from './lib/qiniu.js';
+import { listRepoCommits } from './lib/github.js';
+import { listBucketFiles } from './lib/s3.js';
+
+/**
+ * @typedef {import('minio').BucketItem} BucketItem
+ */
+
+const SizeUnit = ['B', 'KiB', 'MiB', 'GiB']
 
 /**
  * @param {number} val
  */
 function formatSize(val) {
-    for (const unit of ['', 'K', 'M']) {
-        if (val < 1000) return `${val.toFixed(1)} ${unit}B`;
+    let i = 0;
+    while (val > 1000 && i < SizeUnit.length - 1) {
         val /= 1024;
+        i++;
     }
-    return `${val.toFixed(1)} GB`;
+    return `${val.toFixed(2)} ${SizeUnit[i]}`
 }
 
 /**
  * @param {Ncm.Build[]} releases
  */
 async function addChangeLog(releases) {
-    await Promise.all(releases.map(async (value, index) => {
-        if (index + 1 < releases.length) {
-            // it's not the oldest build
-            value.commits = await getCommits(releases[index + 1].timestamp, value.timestamp);
-        } else {
-            // it's the oldest build
-            value.commits = await getCommits(0, value.timestamp);
-            if (value.commits.length > 9) {
-                value.commits = value.commits.slice(0, 9);
-                value.commits.push({ commit: { message: 'and more ...' } });
-            }
+    /** @type {Gh.ReposListCommit[]} */
+    const commits = [];
+    /** @type {(sha: string) => Promise<number>} */
+    const findCommitIndex = async (sha) => {
+        let i = -1;
+        while (i = commits.findIndex(c => c.sha.startsWith(sha)), i < 0) {
+            const earliestSha = commits.at(-1)?.sha ?? 'master';
+            const earlierCommits = await listRepoCommits(earliestSha);
+            if (earlierCommits.length === 1) return -1;
+            commits.pop();
+            commits.push(...earlierCommits);
         }
-    }));
+        return i;
+    }
+    for (let i = 0; i < releases.length; i++) {
+        const current = releases[i];
+        const previous = releases[i + 1];
+        const startIndex = await findCommitIndex(current.sha);
+        if (startIndex < 0) continue;
+        let stopIndex = commits.length - 1;
+        if (previous) {
+            stopIndex = await findCommitIndex(previous.sha);
+        }
+        if (stopIndex - startIndex > 9) {
+            stopIndex = startIndex + 9;
+        }
+        current.commits = commits.slice(startIndex, stopIndex);
+    }
+    if (!commits[0].sha.startsWith(releases[0].sha)) {
+        let i = await findCommitIndex(releases[0].sha)
+        if (i > 0) {
+            releases.splice(0, 0, {
+                version: 'Comming Soon™',
+                sha: 'xxxxxxx',
+                timestamp: Date.now(),
+                commits: commits.slice(0, i),
+                pkgs: {}
+            });
+        }
+    }
 }
 
 /**
- * @param {Qn.File[]} items
- * @returns {{[key: string]: Qn.File[]}}
- */
-function groupFilesByVersion(items) {
-    return groupBy(items, item => {
-        const regxp = /_(v\w+\.\w+\.\w+-\d+-g[0-9a-f]+)/;
-        const version = regxp.exec(item.key)[1];
-        return version || 'unknown';
-    });
-}
-
-/**
- * @param {Qn.File[]} files
+ * @param {BucketItem[]} files
  * @returns {{[key: string]: Ncm.Pkg}}
  */
-function groupPackageByPlatform(files) {
+function pkgByPlatform(files) {
     let result = {};
     for (const file of files) {
         /** @type {Ncm.Pkg} */
         const parsed = {
-            name: file.key,
-            size: formatSize(file.fsize),
-            url: `http://ncm.qn.rocka.cn/${file.key}`
+            name: file.name,
+            size: formatSize(file.size),
+            url: `//artifacts.encm.cf/${file.name}`
         };
-        if (file.key.endsWith('.asar')) {
+        if (file.name.endsWith('.asar')) {
             result['asar'] = parsed;
-        } else if (file.key.endsWith('.tar.gz')) {
-            if (file.key.includes('linux')) {
+        } else if (file.name.endsWith('.tar.gz')) {
+            if (file.name.includes('linux')) {
                 result['linux'] = parsed;
-            } else if (file.key.includes('darwin')) {
+            } else if (file.name.includes('darwin')) {
                 result['darwin'] = parsed;
             }
         }
@@ -79,31 +99,53 @@ function groupPackageByPlatform(files) {
     return result;
 }
 
+const VersionRegex = /v(?<tag>\d+\.\d+\.\d+)-(?<distance>\d+)-g(?<sha>[0-9a-f]+)/;
+
+/**
+ * sort `0.1.2-3-g456789a` descending
+ * @param {string} a
+ * @param {string} b
+ */
+function versionCompare(a, b) {
+    const va = VersionRegex.exec(a);
+    const vb = VersionRegex.exec(b);
+    let r = semver.rcompare(va.groups['tag'], vb.groups['tag']);
+    if (r !== 0) return r;
+    const la = Number.parseInt(va.groups['distance'], 10);
+    const lb = Number.parseInt(vb.groups['distance'], 10);
+    return lb - la;
+}
+
+const CommitShaRegex = /-g([0-9a-f]{7,})$/;
+
 /**
  * @returns {Promise<Ncm.Build[]>}
  */
 async function getFiles() {
     const result = [];
     const files = await listBucketFiles();
-    const groups = groupFilesByVersion(files);
+    const groups = groupBy(files, item => VersionRegex.exec(item.name)[0] ?? 'unknown');
     for (const [version, files] of Object.entries(groups)) {
+        const sha = CommitShaRegex.exec(version)[1];
         result.push({
-            hash: version,
-            timestamp: Math.trunc(files[0].putTime / 10000),
-            pkgs: groupPackageByPlatform(files)
+            version,
+            sha,
+            timestamp: Math.trunc(files[0].lastModified.getTime()),
+            pkgs: pkgByPlatform(files)
         });
     }
-    result.sort((a, b) => b.timestamp - a.timestamp);
+    result.sort((a, b) => versionCompare(a.version, b.version));
     return result;
 }
 
 /**
  * @type {{data: Ncm.Build[]}}
  */
-let avaliableBuilds = {
+const avaliableBuilds = {
     data: [
         {
-            hash: 'Load failed',
+            version: 'Load failed',
+            sha: 'xxxxxxx',
             timestamp: Date.now(),
             commits: [
                 {
@@ -117,7 +159,7 @@ let avaliableBuilds = {
                 'Refresh': {
                     name: 'not_avaliable',
                     size: 'not_avaliable',
-                    url: 'javascript:location.reload();'
+                    url: '/'
                 }
             }
         }

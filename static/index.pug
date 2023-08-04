@@ -13,10 +13,10 @@ html(lang=en)
         section
           div(class='build-item' data-hash=item.hash data-timestamp=item.timestamp)
             div(class='title')
-              span #{item.hash}
+              span #{item.version}
               div
                 each bin, os in item.pkgs
-                  a(href=bin.url) #{os}
+                  a(href=bin.url title=bin.size) #{os}
             p(class='sub-title') Changes to be included in this bulid:
             div(class='detail')
               ul

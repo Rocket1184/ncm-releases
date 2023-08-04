@@ -79,19 +79,8 @@ type ReposListCommitsResponseItem = {
 };
 
 namespace Gh {
+    type ReposListCommit = ReposListCommitsResponseItem;
     type ReposListCommitsResponse = Array<ReposListCommitsResponseItem>;
-}
-
-namespace Qn {
-    interface File {
-        key: string;
-        hash: string;
-        fsize: number;
-        mimeType: string;
-        putTime: number;
-        type: number;
-        status: number;
-    }
 }
 
 namespace Ncm {
@@ -107,7 +96,8 @@ namespace Ncm {
         }
     }
     interface Build {
-        hash: string;
+        version: string;
+        sha: string;
         timestamp: number;
         commits?: Commit[];
         pkgs: {
