@@ -12,6 +12,8 @@ import { listBucketFiles } from './lib/s3.js';
  * @typedef {import('minio').BucketItem} BucketItem
  */
 
+const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+
 const SizeUnit = ['B', 'KiB', 'MiB', 'GiB']
 
 /**
@@ -166,38 +168,19 @@ const avaliableBuilds = {
     ]
 };
 
-/**
- * @param {Ncm.Build[]} input
- */
-function countPkg(input) {
-    return input.reduce((prev, cur) => Object.keys(cur.pkgs).length + prev, 0);
-}
-
 async function refreshAvaliableBuilds() {
     try {
         const releases = await getFiles();
-        const cnt = countPkg(releases);
-        // due to GitHub API [rate-limiting](https://developer.github.com/v3/#rate-limiting)
-        // we can only request 60 times per hour.
-        // so do not refresh change log when avaliable builds have no changes
-        if (cnt === countPkg(avaliableBuilds.data)) return;
-        console.log(`countPkg(getFiles()); // ${cnt}`);
         await addChangeLog(releases);
-        console.log('addChangeLog();');
-        avaliableBuilds = { data: releases };
+        avaliableBuilds.data = releases;
+        console.log(`refreshAvaliableBuilds(); // ${releases.length} versions`);
     } catch (e) {
         console.error('refreshAvaliableBuilds() failed:');
         console.error(e);
     }
 }
 
-(async function loop() {
-    // eslint-disable-next-line no-constant-condition
-    while (true) {
-        await refreshAvaliableBuilds();
-        await new Promise(_ => setTimeout(() => _(), 8 * 1000));
-    }
-})();
+refreshAvaliableBuilds();
 
 const app = new koa();
 
@@ -206,6 +189,28 @@ app.use(route.get('/', ctx => {
 }));
 
 app.use(serve('./static'));
+
+if (typeof WEBHOOK_SECRET === 'string') {
+    console.log('Webhook enabled');
+    app.use(route.get('/webhook/:secret', async (ctx, secret) => {
+        if (secret === WEBHOOK_SECRET) {
+            console.log('Webhook received, refreshing builds...');
+            refreshAvaliableBuilds();
+            ctx.body = 'success';
+        } else {
+            console.log('Received invalid webhook request: ', ctx.path);
+        }
+    }));
+} else {
+    console.log('WEBHOOK_SECRET not set, not enabling webhook');
+    (async function loop() {
+        // eslint-disable-next-line no-constant-condition
+        while (true) {
+            await refreshAvaliableBuilds();
+            await new Promise(_ => setTimeout(() => _(), 60 * 1000));
+        }
+    })();
+}
 
 const port = process.env.PORT || 11233;
 app.listen(port, () => {
