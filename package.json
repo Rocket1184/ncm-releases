@@ -27,14 +27,14 @@
   },
   "homepage": "https://github.com/Rocket1184/ncm-releases#readme",
   "dependencies": {
-    "koa": "^2.14.2",
+    "koa": "^2.15.0",
     "koa-route": "^3.2.0",
     "koa-static": "^5.0.0",
     "lodash": "^4.17.21",
-    "minio": "^7.1.1",
+    "minio": "^7.1.3",
     "node-fetch": "^3.3.2",
     "pug": "^3.0.2",
-    "semver": "^7.5.4"
+    "semver": "^7.6.0"
   },
   "devDependencies": {}
 }
