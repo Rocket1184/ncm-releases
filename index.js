@@ -13,6 +13,7 @@ import { listBucketFiles } from './lib/s3.js';
  */
 
 const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
+const S3_PUBLIC_DOMAIN = process.env.S3_PUBLIC_DOMAIN || 'encm-artifacts.rocka.me';
 
 const SizeUnit = ['B', 'KiB', 'MiB', 'GiB']
 
@@ -85,7 +86,7 @@ function pkgByPlatform(files) {
         const parsed = {
             name: file.name,
             size: formatSize(file.size),
-            url: `//artifacts.encm.cf/${file.name}`
+            url: `//${S3_PUBLIC_DOMAIN}/${file.name}`
         };
         if (file.name.endsWith('.asar')) {
             result['asar'] = parsed;
