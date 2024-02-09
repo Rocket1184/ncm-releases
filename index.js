@@ -213,7 +213,8 @@ if (typeof WEBHOOK_SECRET === 'string') {
     })();
 }
 
+const host = process.env.HOST || '127.0.0.1';
 const port = process.env.PORT || 11233;
-app.listen(port, () => {
+app.listen({ host, port }, () => {
     console.log(`Server listening at http://localhost:${port}`);
 });
